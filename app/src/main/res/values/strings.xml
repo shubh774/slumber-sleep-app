@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Slumber</string>
+    <string name="sound_white_noise">White Noise</string>
+    <string name="sound_brown_noise">Deep Brown Noise</string>
+    <string name="sound_rain">Relaxing Rain</string>
+    <string name="sound_fan">Bedroom Fan</string>
+    <string name="upgrade_pro">⭐ Upgrade to Pro</string>
+</resources>
