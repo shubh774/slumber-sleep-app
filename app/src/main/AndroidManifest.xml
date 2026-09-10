@@ -10,6 +10,10 @@
         android:roundIcon="@android:drawable/ic_lock_idle_alarm"
         android:supportsRtl="true"
         android:theme="@style/Theme.Slumber">
+        <!-- Google AdMob App ID (Test ID) -->
+    <meta-data
+        android:name="com.google.android.gms.ads.APPLICATION_ID"
+        android:value="ca-app-pub-3940256099942544~3347511713"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">
