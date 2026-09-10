@@ -8,4 +8,21 @@
     <color name="text_primary">#F0F6FC</color>
     <color name="text_secondary">#8B949E</color>
     <color name="white">#FFFFFF</color>
+
+    <!-- Sound-card selection states -->
+    <color name="card_stroke_default">#30363D</color>
+    <color name="card_stroke_selected">#58A6FF</color>
+    <color name="card_bg_default">#161B22</color>
+    <color name="card_bg_selected">#1D2A3D</color>
+    <color name="icon_bg_default">#0D1117</color>
+    <color name="icon_bg_selected">#22304A</color>
+
+    <!-- Timer segmented control -->
+    <color name="timer_bg_default">#161B22</color>
+    <color name="timer_bg_selected">#58A6FF</color>
+    <color name="timer_text_selected">#0D1117</color>
+
+    <!-- Pro promo card -->
+    <color name="pro_card_bg">#241F10</color>
+    <color name="pro_card_stroke">#4D3F17</color>
 </resources>
