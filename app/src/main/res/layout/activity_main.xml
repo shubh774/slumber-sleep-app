@@ -217,7 +217,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- AdMob Banner View -->
+    <!-- Real AdMob Banner View -->
     <com.google.android.gms.ads.AdView
         android:id="@+id/adView"
         android:layout_width="match_parent"
@@ -225,6 +225,6 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         app:adSize="BANNER"
-        app:adUnitId="ca-app-pub-3940256099942544/6300978111" />
+        app:adUnitId="ca-app-pub-7438226495184267/2301339591" />
 
 </RelativeLayout>
