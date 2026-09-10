@@ -5,10 +5,14 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.button.MaterialButton
 import java.util.Random
 import kotlin.concurrent.thread
@@ -16,7 +20,8 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
 
     private var isPlaying = false
-    private var currentNoiseType = "white" // "white", "brown", "rain", "fan"
+    private var isProUser = false
+    private var currentNoiseType = "white"
     private var audioTrack: AudioTrack? = null
     private var audioThread: Thread? = null
     private var countDownTimer: CountDownTimer? = null
@@ -24,10 +29,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtPlayingSound: TextView
     private lateinit var txtTimerCountdown: TextView
     private lateinit var btnPlayPause: MaterialButton
+    private lateinit var adView: AdView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // AdMob Initialize करें
+        MobileAds.initialize(this) {}
+
+        adView = findViewById(R.id.adView)
+        val adRequest = AdRequest.Builder().build()
+        adView.loadAd(adRequest)
 
         txtPlayingSound = findViewById(R.id.txtPlayingSound)
         txtTimerCountdown = findViewById(R.id.txtTimerCountdown)
@@ -179,7 +192,10 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Upgrade to Slumber Pro ⭐")
             .setItems(plans) { _, which ->
-                Toast.makeText(this, "Selected: ${plans[which]}", Toast.LENGTH_LONG).show()
+                isProUser = true
+                adView.visibility = View.GONE
+                findViewById<MaterialButton>(R.id.btnPro).visibility = View.GONE
+                Toast.makeText(this, "Pro Activated: Ads Removed!", Toast.LENGTH_LONG).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
