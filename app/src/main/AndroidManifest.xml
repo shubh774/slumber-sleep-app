@@ -13,10 +13,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Slumber">
 
-        <!-- Google AdMob App ID (अभी के लिए टेस्ट ID ताकि पॉलिसी सेफ रहे) -->
+        <!-- Real Google AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-7438226495184267~4007987139"/>
 
         <activity
             android:name=".MainActivity"
