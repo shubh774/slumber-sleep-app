@@ -16,12 +16,13 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.material.button.MaterialButton
 import java.util.Random
 import kotlin.concurrent.thread
+import kotlin.math.sin
 
 class MainActivity : AppCompatActivity() {
 
     private var isPlaying = false
     private var isProUser = false
-    private var currentNoiseType = "white"
+    private var currentNoiseType = "rain"
     private var audioTrack: AudioTrack? = null
     private var audioThread: Thread? = null
     private var countDownTimer: CountDownTimer? = null
@@ -35,9 +36,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // AdMob Initialize करें
         MobileAds.initialize(this) {}
-
         adView = findViewById(R.id.adView)
         val adRequest = AdRequest.Builder().build()
         adView.loadAd(adRequest)
@@ -50,17 +49,23 @@ class MainActivity : AppCompatActivity() {
             if (isPlaying) stopSound() else startSound()
         }
 
-        findViewById<MaterialButton>(R.id.btnSoundWhite).setOnClickListener {
-            selectSound("white", "⚪ Pure White Noise")
+        findViewById<MaterialButton>(R.id.btnSoundRain).setOnClickListener {
+            selectSound("rain", "🌧️ Gentle Rain")
+        }
+        findViewById<MaterialButton>(R.id.btnSoundNature).setOnClickListener {
+            selectSound("nature", "🍃 Nature Night")
+        }
+        findViewById<MaterialButton>(R.id.btnSoundOcean).setOnClickListener {
+            selectSound("ocean", "🌊 Calm Ocean Waves")
         }
         findViewById<MaterialButton>(R.id.btnSoundBrown).setOnClickListener {
             selectSound("brown", "🟤 Deep Brown Noise")
         }
-        findViewById<MaterialButton>(R.id.btnSoundRain).setOnClickListener {
-            selectSound("rain", "🌧️ Gentle Rain")
-        }
         findViewById<MaterialButton>(R.id.btnSoundFan).setOnClickListener {
             selectSound("fan", "💨 Bedroom Fan")
+        }
+        findViewById<MaterialButton>(R.id.btnSoundWhite).setOnClickListener {
+            selectSound("white", "⚪ Pure White Noise")
         }
 
         findViewById<MaterialButton>(R.id.btnTimer15).setOnClickListener { setTimer(15) }
@@ -86,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         isPlaying = true
         btnPlayPause.text = "⏸"
         if (txtPlayingSound.text == "Select a sound to sleep") {
-            txtPlayingSound.text = "⚪ Pure White Noise"
+            txtPlayingSound.text = "🌧️ Gentle Rain"
         }
 
         val sampleRate = 44100
@@ -119,11 +124,28 @@ class MainActivity : AppCompatActivity() {
             val random = Random()
             val buffer = ShortArray(bufferSize)
             var lastValue = 0f
+            var timeStep = 0L
 
             while (isPlaying) {
                 for (i in buffer.indices) {
+                    timeStep++
                     val white = (random.nextFloat() * 2f - 1f)
+
                     val sample = when (currentNoiseType) {
+                        "nature" -> {
+                            // Forest wind + Cricket chirps
+                            lastValue = (lastValue + (0.02f * white)) / 1.02f
+                            val cricketPhase = (timeStep * 4500.0 * 2.0 * Math.PI / sampleRate)
+                            val chirpEnvelope = (sin(timeStep * 24.0 * 2.0 * Math.PI / sampleRate)).toFloat()
+                            val cricket = if (chirpEnvelope > 0.85f) (sin(cricketPhase).toFloat() * 0.18f) else 0f
+                            (lastValue * 1.8f + cricket)
+                        }
+                        "ocean" -> {
+                            // Ocean waves swell (10-second ebb and flow cycle)
+                            lastValue = (lastValue + (0.025f * white)) / 1.025f
+                            val waveSwell = 0.5f + 0.5f * sin(timeStep * 0.1 * 2.0 * Math.PI / sampleRate).toFloat()
+                            (lastValue * (1.5f + waveSwell * 2.2f))
+                        }
                         "brown" -> {
                             lastValue = (lastValue + (0.02f * white)) / 1.02f
                             lastValue * 3.5f
