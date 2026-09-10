@@ -1,4 +1,4 @@
-name: Build Slumber Android APK
+name: Build Slumber Android APK and Bundle
 
 on:
   push:
@@ -27,11 +27,14 @@ jobs:
       with:
         gradle-version: '8.5'
 
-    - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+    - name: Build Debug APK and AAB Bundle
+      run: |
+        gradle assembleDebug bundleDebug --stacktrace
 
-    - name: Upload APK Artifact
+    - name: Upload APK and Bundle Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Slumber-Sleep-App-Debug
-        path: app/build/outputs/apk/debug/*.apk
+        name: Slumber-App-Builds
+        path: |
+          app/build/outputs/apk/debug/*.apk
+          app/build/outputs/bundle/debug/*.aab
