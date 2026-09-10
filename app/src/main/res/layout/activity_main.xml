@@ -46,7 +46,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="@color/card_dark"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="#30363D"
@@ -80,7 +80,7 @@
                         android:id="@+id/btnPlayPause"
                         android:layout_width="72dp"
                         android:layout_height="72dp"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="16dp"
                         android:text="▶"
                         android:textSize="24sp"
                         app:cornerRadius="36dp" />
@@ -98,12 +98,32 @@
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSoundWhite"
+                android:id="@+id/btnSoundRain"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="8dp"
-                android:text="⚪ Pure White Noise"
+                android:text="🌧️ Gentle Rain"
+                android:textColor="@color/text_primary"
+                app:strokeColor="#30363D" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSoundNature"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="8dp"
+                android:text="🍃 Nature Night (Forest &amp; Crickets)"
+                android:textColor="@color/text_primary"
+                app:strokeColor="#30363D" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSoundOcean"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="8dp"
+                android:text="🌊 Calm Ocean Waves"
                 android:textColor="@color/text_primary"
                 app:strokeColor="#30363D" />
 
@@ -118,22 +138,22 @@
                 app:strokeColor="#30363D" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSoundRain"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="8dp"
-                android:text="🌧️ Gentle Rain"
-                android:textColor="@color/text_primary"
-                app:strokeColor="#30363D" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSoundFan"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="8dp"
                 android:text="💨 Bedroom Fan"
+                android:textColor="@color/text_primary"
+                app:strokeColor="#30363D" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSoundWhite"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="24dp"
+                android:text="⚪ Pure White Noise"
                 android:textColor="@color/text_primary"
                 app:strokeColor="#30363D" />
 
@@ -150,6 +170,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
                 android:orientation="horizontal"
                 android:weightSum="4">
 
@@ -196,7 +217,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- AdMob Banner View (सबसे नीचे) -->
+    <!-- AdMob Banner View -->
     <com.google.android.gms.ads.AdView
         android:id="@+id/adView"
         android:layout_width="match_parent"
