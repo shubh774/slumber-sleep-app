@@ -24,18 +24,34 @@
             android:value="ca-app-pub-7438226495184267~4007987139"/>
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".OnboardingActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Slumber">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
         <service
             android:name=".service.SleepSoundService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".widget.SlumberWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_slumber_info" />
+        </receiver>
     </application>
 
 </manifest>
