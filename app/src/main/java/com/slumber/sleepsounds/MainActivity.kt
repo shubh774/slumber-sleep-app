@@ -13,7 +13,9 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.GridLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -45,16 +47,15 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
     private lateinit var btnPlayPause: MaterialButton
     private lateinit var adView: AdView
     private lateinit var cardPro: MaterialCardView
+    private lateinit var soundGrid: GridLayout
 
-    // Sound cards + timer buttons keyed so we can visually highlight whichever is active.
+    // Each sound card, keyed by type, so we can highlight every card that's part of the
+    // current mix (multiple can be highlighted at once now that mixing is supported).
     private lateinit var soundCards: Map<NoiseType, MaterialCardView>
     private lateinit var timerButtons: Map<Int, MaterialButton>
-    private var selectedTimerMinutes: Int? = null
 
     // Simple streak/gamification: counts consecutive days with at least one real listening
-    // session (3+ minutes). This is the same "engagement loop" Calm/Headspace use -- it costs
-    // very little to implement and is one of the biggest drivers of day-2/day-7 retention,
-    // which matters a lot for App Store / Play Store ranking algorithms.
+    // session (3+ minutes). Same "engagement loop" Calm/Headspace use for retention.
     private lateinit var prefs: SharedPreferences
     private var sessionStartMillis: Long? = null
 
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
             isBound = true
             // Reflect whatever state the service is already in (e.g. Activity was recreated
             // while sound kept playing in the background).
-            onStateChanged(service?.isPlaying() ?: false, service?.currentSound() ?: NoiseType.RAIN)
+            onStateChanged(service?.isPlaying() ?: false, service?.activeSounds() ?: emptySet())
             pendingAction?.invoke()
             pendingAction = null
         }
@@ -93,16 +94,10 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
         btnPlayPause = findViewById(R.id.btnPlayPause)
         adView = findViewById(R.id.adView)
         cardPro = findViewById(R.id.cardPro)
+        soundGrid = findViewById(R.id.soundGrid)
         prefs = getSharedPreferences("slumber_prefs", Context.MODE_PRIVATE)
 
-        soundCards = mapOf(
-            NoiseType.RAIN to findViewById(R.id.cardSoundRain),
-            NoiseType.NATURE to findViewById(R.id.cardSoundNature),
-            NoiseType.OCEAN to findViewById(R.id.cardSoundOcean),
-            NoiseType.BROWN to findViewById(R.id.cardSoundBrown),
-            NoiseType.FAN to findViewById(R.id.cardSoundFan),
-            NoiseType.WHITE to findViewById(R.id.cardSoundWhite)
-        )
+        soundCards = buildSoundGrid()
         timerButtons = mapOf(
             15 to findViewById(R.id.btnTimer15),
             30 to findViewById(R.id.btnTimer30),
@@ -115,6 +110,35 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
         updateStreakDisplay()
         maybeRequestNotificationPermission()
     }
+
+    /** Inflates one card per NoiseType into the 3-column GridLayout and wires its tap-to-toggle. */
+    private fun buildSoundGrid(): Map<NoiseType, MaterialCardView> {
+        val inflater = LayoutInflater.from(this)
+        val columns = 3
+        val cards = mutableMapOf<NoiseType, MaterialCardView>()
+
+        NoiseType.values().forEachIndexed { index, type ->
+            val card = inflater.inflate(R.layout.item_sound_card, soundGrid, false) as MaterialCardView
+            card.findViewById<TextView>(R.id.itemSoundEmoji).text = type.emoji
+            card.findViewById<TextView>(R.id.itemSoundLabel).text = type.displayName
+
+            val params = GridLayout.LayoutParams().apply {
+                width = 0
+                height = dp(88)
+                columnSpec = GridLayout.spec(index % columns, 1f)
+                rowSpec = GridLayout.spec(index / columns)
+                val margin = dp(5)
+                setMargins(margin, margin, margin, margin)
+            }
+            card.layoutParams = params
+            card.setOnClickListener { toggleSound(type) }
+            soundGrid.addView(card)
+            cards[type] = card
+        }
+        return cards
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun setupBilling() {
         billingManager = BillingManager(applicationContext) { isPro ->
@@ -138,11 +162,7 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
 
     private fun setupClickListeners() {
         btnPlayPause.setOnClickListener {
-            runOrQueue { it.playPause() }
-        }
-
-        soundCards.forEach { (type, card) ->
-            card.setOnClickListener { selectSound(type) }
+            runOrQueue { it.togglePlayPause() }
         }
 
         timerButtons.forEach { (minutes, button) ->
@@ -157,9 +177,8 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
         cardPro.setOnClickListener { showSubscriptionPlans() }
     }
 
-    private fun selectSound(type: NoiseType) {
-        highlightSound(type)
-        runOrQueue { it.selectSound(type) }
+    private fun toggleSound(type: NoiseType) {
+        runOrQueue { it.toggleSound(type) }
     }
 
     private fun setTimer(minutes: Int) {
@@ -167,10 +186,10 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
         runOrQueue { it.setTimer(minutes.toLong()) }
     }
 
-    /** Visually marks the active sound card and resets the others to their default look. */
-    private fun highlightSound(selected: NoiseType) {
+    /** Visually marks every card that's currently part of the mix; the rest go back to default. */
+    private fun highlightActiveSounds(active: Set<NoiseType>) {
         soundCards.forEach { (type, card) ->
-            if (type == selected) {
+            if (type in active) {
                 card.strokeColor = ContextCompat.getColor(this, R.color.card_stroke_selected)
                 card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.card_bg_selected))
             } else {
@@ -182,7 +201,6 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
 
     /** Visually marks the active timer duration (or clears all when timer is turned off). */
     private fun highlightTimer(selectedMinutes: Int?) {
-        selectedTimerMinutes = selectedMinutes
         timerButtons.forEach { (minutes, button) ->
             if (minutes == selectedMinutes) {
                 button.setBackgroundColor(ContextCompat.getColor(this, R.color.timer_bg_selected))
@@ -203,16 +221,10 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
     }
 
     /**
-     * CRITICAL FIX: previously this only called startService() when `service` was null --
-     * but by the time the user taps a button, bindService() (from onStart) has usually
-     * already connected, so that branch never ran. That meant the service was only ever
-     * BOUND, never independently STARTED. A purely-bound service is destroyed by Android
-     * the moment the last client unbinds (i.e. the instant the Activity backgrounds) --
-     * which is exactly why sound was cutting out on minimizing the app.
-     *
-     * Fix: always call startService() before touching the service, every time. It's
-     * idempotent (safe on an already-running service) and guarantees the service keeps an
-     * independent lifecycle that survives the Activity unbinding.
+     * Always calls startService() before touching the service, every time -- it's idempotent
+     * (safe on an already-running service) and guarantees the service keeps an independent
+     * lifecycle that survives the Activity unbinding (see the background-playback fix notes
+     * in SleepSoundService for why this matters).
      */
     private fun runOrQueue(action: (SleepSoundService) -> Unit) {
         startService(Intent(this, SleepSoundService::class.java))
@@ -240,10 +252,8 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
     /**
      * Many phones (Samsung's "Sleeping apps" / "Put unused apps to sleep", and similar
      * features on other brands) will kill background audio a few minutes after the screen
-     * locks unless the app is exempted from battery optimization. This is exactly the failure
-     * users hit with sleep-sound apps. We ask once, with a plain-language explanation, rather
-     * than silently failing later. Declining is fully respected -- we never ask again this
-     * session (only re-prompt after a fresh app install/data clear).
+     * locks unless the app is exempted from battery optimization. We ask once, with a
+     * plain-language explanation, rather than silently failing later.
      */
     private fun maybeRequestBatteryExemption() {
         if (prefs.getBoolean("asked_battery_exemption", false)) return
@@ -320,13 +330,20 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
             .show()
     }
 
+    private fun mixLabel(active: Set<NoiseType>): String = when {
+        active.isEmpty() -> "Tap sounds below to mix"
+        active.size == 1 -> "${active.first().emoji} ${active.first().displayName}"
+        active.size <= 3 -> active.joinToString(" + ") { "${it.emoji} ${it.displayName}" }
+        else -> "${active.size} sounds mixing \uD83C\uDFB6"
+    }
+
     // --- SleepSoundService.PlaybackListener ---
 
-    override fun onStateChanged(isPlaying: Boolean, type: NoiseType) {
+    override fun onStateChanged(isPlaying: Boolean, activeSounds: Set<NoiseType>) {
         runOnUiThread {
-            txtPlayingSound.text = "${type.emoji} ${type.displayName}"
+            txtPlayingSound.text = mixLabel(activeSounds)
             btnPlayPause.text = if (isPlaying) "\u23F8" else "\u25B6"
-            highlightSound(type)
+            highlightActiveSounds(activeSounds)
 
             if (isPlaying) {
                 if (sessionStartMillis == null) sessionStartMillis = System.currentTimeMillis()
