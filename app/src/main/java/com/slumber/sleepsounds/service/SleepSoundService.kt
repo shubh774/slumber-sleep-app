@@ -18,15 +18,15 @@ import com.slumber.sleepsounds.MainActivity
 import com.slumber.sleepsounds.R
 import com.slumber.sleepsounds.audio.NoiseEngine
 import com.slumber.sleepsounds.audio.NoiseType
+import com.slumber.sleepsounds.widget.SlumberWidgetProvider
 
 /**
  * Foreground Service that owns playback. This is what makes the app actually work as a
  * sleep-sounds app: without it, Android suspends the process a few seconds after the screen
  * locks and the sound cuts out -- which is exactly when the user needs it most.
  *
- * The Activity binds to this for live UI updates, but the service does NOT depend on the
- * Activity being alive: the notification's Play/Pause action and the lock-screen media
- * controls both work by sending intents straight back into this service.
+ * Supports mixing multiple sounds at once via NoiseEngine.toggleSound(). The Activity and
+ * the home-screen widget both talk to this service; neither owns the audio directly.
  */
 class SleepSoundService : Service() {
 
@@ -36,7 +36,7 @@ class SleepSoundService : Service() {
 
         const val ACTION_PLAY_PAUSE = "com.slumber.sleepsounds.action.PLAY_PAUSE"
         const val ACTION_STOP = "com.slumber.sleepsounds.action.STOP"
-        const val ACTION_SELECT_SOUND = "com.slumber.sleepsounds.action.SELECT_SOUND"
+        const val ACTION_TOGGLE_SOUND = "com.slumber.sleepsounds.action.TOGGLE_SOUND"
         const val ACTION_SET_TIMER = "com.slumber.sleepsounds.action.SET_TIMER"
         const val ACTION_CANCEL_TIMER = "com.slumber.sleepsounds.action.CANCEL_TIMER"
         const val EXTRA_SOUND_ID = "extra_sound_id"
@@ -44,7 +44,7 @@ class SleepSoundService : Service() {
     }
 
     interface PlaybackListener {
-        fun onStateChanged(isPlaying: Boolean, type: NoiseType)
+        fun onStateChanged(isPlaying: Boolean, activeSounds: Set<NoiseType>)
         fun onTimerTick(remainingMillis: Long)
         fun onTimerFinished()
     }
@@ -65,8 +65,8 @@ class SleepSoundService : Service() {
 
         mediaSession = MediaSessionCompat(this, "SlumberSession").apply {
             setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() = playPause()
-                override fun onPause() = playPause()
+                override fun onPlay() = resumeIfPossible()
+                override fun onPause() = pausePlayback()
                 override fun onStop() = stopPlayback()
             })
             isActive = true
@@ -75,11 +75,11 @@ class SleepSoundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_PLAY_PAUSE -> playPause()
+            ACTION_PLAY_PAUSE -> togglePlayPause()
             ACTION_STOP -> stopPlayback()
-            ACTION_SELECT_SOUND -> {
+            ACTION_TOGGLE_SOUND -> {
                 val id = intent.getStringExtra(EXTRA_SOUND_ID) ?: return START_STICKY
-                selectSound(NoiseType.fromId(id))
+                toggleSound(NoiseType.fromId(id))
             }
             ACTION_SET_TIMER -> {
                 val minutes = intent.getIntExtra(EXTRA_TIMER_MINUTES, 0)
@@ -89,7 +89,7 @@ class SleepSoundService : Service() {
         }
         // START_STICKY: if the OS kills the process under memory pressure it will try to
         // restart the service, though without our extras -- acceptable since the user would
-        // have to re-pick a sound anyway; the important part is we don't silently vanish.
+        // have to re-pick sounds anyway; the important part is we don't silently vanish.
         return START_STICKY
     }
 
@@ -100,41 +100,43 @@ class SleepSoundService : Service() {
     }
 
     fun isPlaying(): Boolean = engine.isPlaying
-    fun currentSound(): NoiseType = engine.currentType
+    fun activeSounds(): Set<NoiseType> = engine.currentActiveTypes()
 
-    fun selectSound(type: NoiseType) {
-        val wasPlaying = engine.isPlaying
-        engine.switchTo(type)
-        if (!wasPlaying) {
+    fun toggleSound(type: NoiseType) {
+        engine.toggleSound(type)
+        if (engine.isPlaying) {
             startForeground(NOTIFICATION_ID, buildNotification())
         }
-        updatePlaybackState()
-        updateNotification()
-        listener?.onStateChanged(engine.isPlaying, engine.currentType)
+        publishState()
     }
 
-    fun playPause() {
+    fun togglePlayPause() {
+        if (engine.isPlaying) pausePlayback() else resumeIfPossible()
+    }
+
+    fun resumeIfPossible() {
+        engine.resume()
         if (engine.isPlaying) {
-            engine.stop()
-            updatePlaybackState()
-            listener?.onStateChanged(false, engine.currentType)
-            updateNotification()
-            // Keep the service (and notification) around briefly so the user can resume
-            // quickly, but drop foreground priority since we're silent now.
-            stopForeground(STOP_FOREGROUND_DETACH)
-        } else {
-            engine.start(engine.currentType)
             startForeground(NOTIFICATION_ID, buildNotification())
-            updatePlaybackState()
-            listener?.onStateChanged(true, engine.currentType)
         }
+        publishState()
+    }
+
+    fun pausePlayback() {
+        engine.pause()
+        publishState()
+        // Keep the service (and notification) around briefly so the user can resume
+        // quickly, but drop foreground priority since we're silent now.
+        stopForeground(STOP_FOREGROUND_DETACH)
+        updateNotification()
     }
 
     fun stopPlayback() {
-        engine.stop()
+        engine.pause()
+        // Also forget the selection entirely -- Stop means stop, unlike Pause.
+        engine.currentActiveTypes().forEach { engine.toggleSound(it) }
         cancelTimer()
-        updatePlaybackState()
-        listener?.onStateChanged(false, engine.currentType)
+        publishState()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -148,7 +150,7 @@ class SleepSoundService : Service() {
             }
             override fun onFinish() {
                 listener?.onTimerFinished()
-                stopPlayback()
+                pausePlayback()
             }
         }.start()
     }
@@ -156,6 +158,13 @@ class SleepSoundService : Service() {
     fun cancelTimer() {
         countDownTimer?.cancel()
         countDownTimer = null
+    }
+
+    private fun publishState() {
+        updatePlaybackState()
+        updateNotification()
+        listener?.onStateChanged(engine.isPlaying, engine.currentActiveTypes())
+        SlumberWidgetProvider.updateAllWidgets(this, engine.isPlaying, engine.currentActiveTypes())
     }
 
     private fun updatePlaybackState() {
@@ -177,8 +186,17 @@ class SleepSoundService : Service() {
         manager?.notify(NOTIFICATION_ID, buildNotification())
     }
 
+    private fun mixLabel(): String {
+        val active = engine.currentActiveTypes()
+        return when {
+            active.isEmpty() -> "Slumber"
+            active.size == 1 -> "${active.first().emoji} ${active.first().displayName}"
+            active.size <= 3 -> active.joinToString(" + ") { it.displayName }
+            else -> "${active.size} sounds mixing"
+        }
+    }
+
     private fun buildNotification(): Notification {
-        val type = engine.currentType
         val contentIntent = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
@@ -205,7 +223,7 @@ class SleepSoundService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("${type.emoji} ${type.displayName}")
+            .setContentTitle(mixLabel())
             .setContentText(if (engine.isPlaying) "Playing" else "Paused")
             .setContentIntent(contentIntent)
             .addAction(playPauseAction)
@@ -229,7 +247,7 @@ class SleepSoundService : Service() {
                 "Sleep sound playback",
                 NotificationManager.IMPORTANCE_LOW // LOW = no sound/heads-up for the notification itself
             ).apply {
-                description = "Controls for the currently playing sleep sound"
+                description = "Controls for the currently playing sleep sound mix"
                 setShowBadge(false)
             }
             getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
@@ -240,6 +258,7 @@ class SleepSoundService : Service() {
         engine.release()
         cancelTimer()
         mediaSession.release()
+        SlumberWidgetProvider.updateAllWidgets(this, false, emptySet())
         super.onDestroy()
     }
 
