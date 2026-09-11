@@ -5,10 +5,14 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +41,7 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
 
     private lateinit var txtPlayingSound: TextView
     private lateinit var txtTimerCountdown: TextView
+    private lateinit var txtStreak: TextView
     private lateinit var btnPlayPause: MaterialButton
     private lateinit var adView: AdView
     private lateinit var cardPro: MaterialCardView
@@ -46,8 +51,18 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
     private lateinit var timerButtons: Map<Int, MaterialButton>
     private var selectedTimerMinutes: Int? = null
 
+    // Simple streak/gamification: counts consecutive days with at least one real listening
+    // session (3+ minutes). This is the same "engagement loop" Calm/Headspace use -- it costs
+    // very little to implement and is one of the biggest drivers of day-2/day-7 retention,
+    // which matters a lot for App Store / Play Store ranking algorithms.
+    private lateinit var prefs: SharedPreferences
+    private var sessionStartMillis: Long? = null
+
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op either way */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            // Whether granted or not, move on to the next onboarding step.
+            maybeRequestBatteryExemption()
+        }
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -74,9 +89,11 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
 
         txtPlayingSound = findViewById(R.id.txtPlayingSound)
         txtTimerCountdown = findViewById(R.id.txtTimerCountdown)
+        txtStreak = findViewById(R.id.txtStreak)
         btnPlayPause = findViewById(R.id.btnPlayPause)
         adView = findViewById(R.id.adView)
         cardPro = findViewById(R.id.cardPro)
+        prefs = getSharedPreferences("slumber_prefs", Context.MODE_PRIVATE)
 
         soundCards = mapOf(
             NoiseType.RAIN to findViewById(R.id.cardSoundRain),
@@ -95,6 +112,7 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
         setupBilling()
         setupAds()
         setupClickListeners()
+        updateStreakDisplay()
         maybeRequestNotificationPermission()
     }
 
@@ -185,17 +203,23 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
     }
 
     /**
-     * Runs the action immediately if the service is already bound. Otherwise starts the
-     * service (idempotent -- safe even if it's already running) and queues the action to
-     * fire the moment onServiceConnected() completes, so a fast tap right after launch is
-     * never silently dropped.
+     * CRITICAL FIX: previously this only called startService() when `service` was null --
+     * but by the time the user taps a button, bindService() (from onStart) has usually
+     * already connected, so that branch never ran. That meant the service was only ever
+     * BOUND, never independently STARTED. A purely-bound service is destroyed by Android
+     * the moment the last client unbinds (i.e. the instant the Activity backgrounds) --
+     * which is exactly why sound was cutting out on minimizing the app.
+     *
+     * Fix: always call startService() before touching the service, every time. It's
+     * idempotent (safe on an already-running service) and guarantees the service keeps an
+     * independent lifecycle that survives the Activity unbinding.
      */
     private fun runOrQueue(action: (SleepSoundService) -> Unit) {
+        startService(Intent(this, SleepSoundService::class.java))
         val current = service
         if (current != null) {
             action(current)
         } else {
-            startService(Intent(this, SleepSoundService::class.java))
             pendingAction = { service?.let(action) }
         }
     }
@@ -207,8 +231,76 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
             ) == PackageManager.PERMISSION_GRANTED
             if (!granted) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return // battery step continues from the permission callback
             }
         }
+        maybeRequestBatteryExemption()
+    }
+
+    /**
+     * Many phones (Samsung's "Sleeping apps" / "Put unused apps to sleep", and similar
+     * features on other brands) will kill background audio a few minutes after the screen
+     * locks unless the app is exempted from battery optimization. This is exactly the failure
+     * users hit with sleep-sound apps. We ask once, with a plain-language explanation, rather
+     * than silently failing later. Declining is fully respected -- we never ask again this
+     * session (only re-prompt after a fresh app install/data clear).
+     */
+    private fun maybeRequestBatteryExemption() {
+        if (prefs.getBoolean("asked_battery_exemption", false)) return
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            prefs.edit().putBoolean("asked_battery_exemption", true).apply()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Keep sounds playing all night")
+            .setMessage(
+                "Some phones pause background audio to save battery. To make sure your " +
+                    "sleep sound keeps playing after your screen locks, allow Slumber to run " +
+                    "without battery restrictions."
+            )
+            .setPositiveButton("Allow") { _, _ ->
+                prefs.edit().putBoolean("asked_battery_exemption", true).apply()
+                try {
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                            Uri.parse("package:$packageName")
+                        )
+                    )
+                } catch (_: Exception) {
+                    // A few OEM ROMs don't implement this action; nothing more we can do.
+                }
+            }
+            .setNegativeButton("Not now") { _, _ ->
+                prefs.edit().putBoolean("asked_battery_exemption", true).apply()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /** Called when a listening session ends; counts it toward the daily streak if long enough. */
+    private fun recordSessionIfSignificant(elapsedMillis: Long) {
+        if (elapsedMillis < 3 * 60 * 1000L) return // too short to count as a real session
+
+        val today = System.currentTimeMillis() / (1000L * 60 * 60 * 24)
+        val lastDay = prefs.getLong("last_session_day", -1L)
+        if (lastDay == today) return // already counted today
+
+        val currentStreak = prefs.getInt("streak_count", 0)
+        val newStreak = if (lastDay == today - 1) currentStreak + 1 else 1
+        prefs.edit()
+            .putLong("last_session_day", today)
+            .putInt("streak_count", newStreak)
+            .apply()
+        updateStreakDisplay()
+    }
+
+    private fun updateStreakDisplay() {
+        val streak = prefs.getInt("streak_count", 0)
+        txtStreak.text = if (streak > 0) "\uD83D\uDD25 $streak day streak" else ""
+        txtStreak.visibility = if (streak > 0) View.VISIBLE else View.GONE
     }
 
     private fun showSubscriptionPlans() {
@@ -235,6 +327,15 @@ class MainActivity : AppCompatActivity(), SleepSoundService.PlaybackListener {
             txtPlayingSound.text = "${type.emoji} ${type.displayName}"
             btnPlayPause.text = if (isPlaying) "\u23F8" else "\u25B6"
             highlightSound(type)
+
+            if (isPlaying) {
+                if (sessionStartMillis == null) sessionStartMillis = System.currentTimeMillis()
+            } else {
+                sessionStartMillis?.let { start ->
+                    recordSessionIfSignificant(System.currentTimeMillis() - start)
+                }
+                sessionStartMillis = null
+            }
         }
     }
 
