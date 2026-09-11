@@ -1,27 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Crescent Moon (गोल्डन चाँद) -->
+    <!-- Soft glow behind the moon, kept inside the ~66dp adaptive-icon safe zone -->
+    <path android:pathData="M54,50 m-26,0 a26,26 0 1,0 52,0 a26,26 0 1,0 -52,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="50"
+                android:gradientRadius="26"
+                android:startColor="#33F2C94C"
+                android:endColor="#00F2C94C" />
+        </aapt:attr>
+    </path>
+
+    <!-- Crescent moon -->
     <path
         android:fillColor="#F2C94C"
         android:pathData="M54,30 A20,20 0 1 0 74,50 A16,16 0 0 1 54,30 Z" />
 
-    <!-- Stars (तारे) -->
+    <!-- Stars -->
     <path
         android:fillColor="#58A6FF"
-        android:pathData="M72,34 L74,38 L78,40 L74,42 L72,46 L70,42 L66,40 L70,38 Z" />
+        android:pathData="M73,32 L75,36.5 L79.5,38.5 L75,40.5 L73,45 L71,40.5 L66.5,38.5 L71,36.5 Z" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M38,44 L39,46 L41,47 L39,48 L38,50 L37,48 L35,47 L37,46 Z" />
+        android:pathData="M35,42 L36.2,44.6 L38.8,45.8 L36.2,47 L35,49.6 L33.8,47 L31.2,45.8 L33.8,44.6 Z" />
 
-    <!-- Sound Equalizer Waves (नीचे नीली तरंगे) -->
+    <!-- Gentle soundwave, centered within the safe zone -->
     <path
         android:strokeColor="#58A6FF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="2.6"
         android:strokeLineCap="round"
-        android:pathData="M38,72 L38,80 M46,68 L46,84 M54,64 L54,88 M62,68 L62,84 M70,72 L70,80" />
+        android:pathData="M40,74 L40,80 M47,70 L47,84 M54,66 L54,88 M61,70 L61,84 M68,74 L68,80" />
 </vector>
