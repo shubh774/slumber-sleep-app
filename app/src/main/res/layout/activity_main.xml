@@ -71,7 +71,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="28dp"
+                android:layout_marginBottom="24dp"
                 app:cardBackgroundColor="@color/card_dark"
                 app:cardCornerRadius="26dp"
                 app:cardElevation="0dp"
@@ -84,16 +84,19 @@
                     android:background="@drawable/hero_banner_bg"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:paddingTop="32dp"
-                    android:paddingBottom="26dp">
+                    android:paddingTop="30dp"
+                    android:paddingBottom="24dp">
 
                     <TextView
                         android:id="@+id/txtPlayingSound"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Select a sound to sleep"
+                        android:gravity="center"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        android:text="Tap sounds below to mix"
                         android:textColor="@color/text_primary"
-                        android:textSize="19sp"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -122,9 +125,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="16dp"
                         android:alpha="0.7"
-                        android:text="✨ Deep Sleep • Calmer Mind"
+                        android:text="✨ Tap multiple sounds to layer them"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
@@ -140,7 +143,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Choose Your Sound"
+                    android:text="Choose Your Sounds"
                     android:textColor="@color/text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -150,266 +153,19 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:text="6 sounds"
+                    android:text="18 sounds • mix freely"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </RelativeLayout>
 
-            <!-- Sound grid: 3 rows x 2 columns of selectable cards -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundRain"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🌧️"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Gentle Rain"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundNature"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🍃"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Nature Night"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundOcean"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🌊"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Ocean Waves"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundBrown"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🟤"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Brown Noise"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <LinearLayout
+            <!-- Sound grid: 3 columns x 6 rows = 18 selectable (multi-select) cards -->
+            <GridLayout
+                android:id="@+id/soundGrid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundFan"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="💨"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Bedroom Fan"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSoundWhite"
-                    android:layout_width="0dp"
-                    android:layout_height="96dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/card_bg_default"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/card_stroke_default"
-                    app:strokeWidth="1.5dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⚪"
-                            android:textSize="26sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="White Noise"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+                android:columnCount="3"
+                android:useDefaultMargins="false" />
 
             <!-- Sleep timer -->
             <TextView
@@ -492,7 +248,7 @@
                     app:strokeWidth="1dp" />
             </LinearLayout>
 
-            <!-- Pro upsell card (real card, not a tiny button) -->
+            <!-- Pro upsell card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPro"
                 android:layout_width="match_parent"
