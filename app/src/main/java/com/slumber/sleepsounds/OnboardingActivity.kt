@@ -42,7 +42,7 @@ class OnboardingActivity : AppCompatActivity() {
     private lateinit var titleView: TextView
     private lateinit var bodyView: TextView
     private lateinit var nextButton: MaterialButton
-    private lateinit var skipButton: MaterialButton
+    private lateinit var skipButton: TextView
     private lateinit var dots: List<View>
 
     override fun onCreate(savedInstanceState: Bundle?) {
