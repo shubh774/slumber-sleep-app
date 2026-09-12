@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace = "com.slumber.sleepsounds"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.slumber.sleepsounds"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -54,9 +54,9 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // Google AdMob & Google Play Billing
+    // Google AdMob & Google Play Billing (Latest v8.0.0)
     implementation("com.google.android.gms:play-services-ads:23.0.0")
-    implementation("com.android.billingclient:billing-ktx:6.2.1")
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
 
     // Needed for MediaSessionCompat / MediaButtonReceiver (lock-screen controls,
     // notification media style) used by SleepSoundService.
