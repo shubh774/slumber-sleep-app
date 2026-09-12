@@ -8,6 +8,7 @@ import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
@@ -54,7 +55,11 @@ class BillingManager(
 
     private val billingClient = BillingClient.newBuilder(context)
         .setListener(this)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .build()
+        )
         .build()
 
     /**
@@ -96,11 +101,23 @@ class BillingManager(
 
         billingClient.queryProductDetailsAsync(
             QueryProductDetailsParams.newBuilder().setProductList(subsProducts).build()
-        ) { _, subsResult ->
+        ) { subsBillingResult, subsResult ->
+            val subsList = if (subsBillingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                subsResult?.productDetailsList ?: emptyList()
+            } else {
+                emptyList()
+            }
+
             billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(inAppProducts).build()
-            ) { _, inAppResult ->
-                val combined = (subsResult + inAppResult).associateBy { it.productId }
+            ) { inAppBillingResult, inAppResult ->
+                val inAppList = if (inAppBillingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    inAppResult?.productDetailsList ?: emptyList()
+                } else {
+                    emptyList()
+                }
+
+                val combined = (subsList + inAppList).associateBy { it.productId }
                 productDetailsCache = combined
             }
         }
